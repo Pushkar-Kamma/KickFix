@@ -63,6 +63,6 @@ The goal is a real-time kick fixer for martial arts, primarily Taekwondo. It use
 ---
 
 ## 5. Logic Flowchart
-You can view and edit the visual logic flow for the app's processing engine here:
+You can view the visual logic flow for the app's processing engine here:
 
-[**Edit Logic Flowchart on Mermaid Live**](https://mermaid.live/edit#pako:eNptVF1v2koQ_StzV-rNC0QYcADrqhWBkC9I3JBWbU0etniwV9i71nodQlH-e8drO6VXQTLg2XPOnNmZ3QNbqxCZxyLNsxgepysJ9PnwAfyY5wiOB0s0RVaFx8HScG1gwlPUHM46MPOXT9Buf4Tzw5ccNQgJM02rn14rxjktwp2ykEkwFXmW8L0HJwv1jAQ2Cr4K3J08VehJJXVE_Y65jU0bLow67RAjjQiXscoN3D-jpnitMLXoi4OvVUZ26Gcjkjc3F0du6kr_V2_XgwfkSduIFEv2GvNcyOiI3jiaBRcvRvO1gQWGgvsiQ5hzGaZcb_PazcwiL4NxliV7uJcIF4VWMBOJIXNU_LcWfG_Bjxp-aeFXwYQn6yLhBuFG0R7BWEYJ5h5ciawFtxKxRaFtgk_vltCjlpmSPEWDayOUrABXVv36UArAJObpT9QYNltzfbQ1s6NQU-5N3Xrn1M1hyg2H82KzQf2-h75HDnmyz0VerdxYkdvgOkRpxGYPPvIt0A6izMlhNTS11q3Fzg-TGNdb8MWzMo3LeWnpP3C6HaAhsLhFME5QG5opiyxrlyG1DGZKmWawLO_jX7y7Wp82FcaJiGRKzpo81fddyVomRZqVeiXp_k-yIo9Lbk559I7rsElVkWgyRBQbS_LrTG_V_p3FLwlztbPYz28J5mJjbLMpSxSjbvQtfKK0pt5aysPRsfJRb8r4rVhv_zl5vzeuBzPE8CcnSw_4TMevAizgX7in5zM9D1Z5GSwTtWsvFOHs2dsJEzcHrpnxpYU-BgRBboBHXMh66bGZJtai-0WEzDO6wBajyyPl5Ss7lMAVMzGmuGIe_Q1xw4vErNhKvhIt4_KHUmnD1KqIYuZteJLTW5GFNOdTweny-gNBGaKeqEIa5jnOsG9FmHdgL_Q-cE97A2fYc_rdUb931hu22J557dGoezoYDZ3hwB25rtN1Xlvsl83bPXX7nf6w47qDbv-sMxz1Xn8DpoWGYA)
+<img width="2613" height="1586" alt="mermaid-diagram-2026-01-09-215754" src="https://github.com/user-attachments/assets/7adfa849-64fd-43e2-8be3-83e4dcd5fce9" />
