@@ -52,6 +52,9 @@ The goal is a real-time kick fixer for martial arts, primarily Taekwondo. It use
     * Lighting and self-occlusion (limbs hiding behind the body) can cause flickering.
     * **Fix**: Use `visibility` scores to ignore low-confidence frames and provide a "setup guide" for optimal lighting.
 
+This is a flowchart diagram of the logic that will occur
+
+<img width="2613" height="1586" alt="mermaid-diagram-2026-01-09-215754" src="https://github.com/user-attachments/assets/7adfa849-64fd-43e2-8be3-83e4dcd5fce9" />
 ---
 
 ## 4. Competition Analysis
@@ -60,9 +63,3 @@ The goal is a real-time kick fixer for martial arts, primarily Taekwondo. It use
 * **AI Taekwondo Coach**: Currently appears abandoned (low downloads, no data).
 * **Sensei Ai**: High cost ($20-$30/month) but provides general feedback without active Assessment tools.
 
----
-
-## 5. Logic Flowchart
-You can view the visual logic flow for the app's processing engine here:
-
-<img width="2613" height="1586" alt="mermaid-diagram-2026-01-09-215754" src="https://github.com/user-attachments/assets/7adfa849-64fd-43e2-8be3-83e4dcd5fce9" />
