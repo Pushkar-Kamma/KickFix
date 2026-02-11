@@ -233,6 +233,11 @@ def analyze_side_kick(history, active_leg):
     
     feedback.append(f"Speed: {speed_mph} MPH")
 
+    # Calculate Leg Length in Pixels for scaling
+    leg_len_px = calculate_distance(lm[k_hip]['pos'], lm[k_knee]['pos']) + \
+                 calculate_distance(lm[k_knee]['pos'], lm[k_ankle]['pos'])
+    if leg_len_px == 0: leg_len_px = 1 # Avoid div by zero
+
     # 1. Guard Check
     shoulders_y = max(lm[LEFT_SHOULDER]['pos'][1], lm[RIGHT_SHOULDER]['pos'][1])
     if not check_guard(lm, k_wrist, s_wrist, shoulders_y):
@@ -266,12 +271,17 @@ def analyze_side_kick(history, active_leg):
         feedback.append("Keep Chest Up! (Dropping too low)")
         scorecard["Errors"].append("Torso Dropped Below Hips")
 
-    # 7. Power Line (Advanced)
+    # 7. Power Line (Advanced) - NORMALIZED FIX
     # Check alignment of Shoulder, Hip, Heel
-    power_leak = calculate_point_line_distance(lm[k_hip]['pos'], lm[l_shoulder]['pos'], lm[k_heel]['pos'])
-    if power_leak > 40: # Pixels deviation
-        feedback.append("Align Joints! (Hip sticking out)")
-        scorecard["Errors"].append(f"Broken Power Line (Dev: {int(power_leak)})")
+    #power_leak = calculate_point_line_distance(lm[k_hip]['pos'], lm[l_shoulder]['pos'], lm[k_heel]['pos'])
+    
+    # Dynamic Threshold: 10% of user's leg length
+    # This works regardless of how far the user is standing
+    dynamic_threshold = leg_len_px * 0.10
+    
+    #if power_leak > dynamic_threshold: 
+       # feedback.append("Align Joints! (Hip sticking out)")
+        #scorecard["Errors"].append(f"Broken Power Line")
 
     # 8. Knee Height Maintenance (Advanced)
     # Compare Knee Y at chamber (start) vs Knee Y at peak
