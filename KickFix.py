@@ -7,7 +7,6 @@ import time
 KICK_HEIGHT_THRESHOLD = 80  # Kicking foot must be 80px higher than standing foot
 MIN_FRAME_COUNT = 5         # Ignore noise
 VISIBILITY_THRESHOLD = 0.6  # Confidence check (Stops "Ghost Kicks")
-AVG_LEG_LENGTH_METERS = 0.9 # Approx 35 inches (used for MPH calculation)
 
 # Landmark IDs
 NOSE = 0
@@ -46,51 +45,6 @@ def get_landmarks_with_vis(results, w, h):
 def calculate_distance(p1, p2):
     return np.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
 
-def calculate_point_line_distance(point, line_start, line_end):
-    """Calculates perpendicular distance from a point to a line defined by two points."""
-    p = np.array(point)
-    a = np.array(line_start)
-    b = np.array(line_end)
-    return np.abs(np.cross(b-a, a-p)) / np.linalg.norm(b-a)
-
-def calculate_mph(history, k_ankle, k_knee, k_hip):
-    """
-    Calculates Speed in MPH using leg length scaling.
-    """
-    if len(history) < 2: return 0.0
-    start_lms = history[0]['lms']
-    
-    # 1. Calculate Leg Length in Pixels (Hip -> Knee -> Ankle)
-    leg_len_px = calculate_distance(start_lms[k_hip]['pos'], start_lms[k_knee]['pos']) + \
-                 calculate_distance(start_lms[k_knee]['pos'], start_lms[k_ankle]['pos'])
-    
-    if leg_len_px == 0: return 0.0
-
-    # 2. Determine Scale (Meters per Pixel)
-    meters_per_px = AVG_LEG_LENGTH_METERS / leg_len_px
-
-    max_velocity_mph = 0.0
-    
-    # 3. Calculate Velocity
-    for i in range(1, len(history)):
-        t1, pos1 = history[i-1]['time'], history[i-1]['lms'][k_ankle]['pos']
-        t2, pos2 = history[i]['time'], history[i]['lms'][k_ankle]['pos']
-        
-        dt = t2 - t1
-        if dt == 0: continue
-        
-        dist_px = calculate_distance(pos1, pos2)
-        velocity_px_sec = dist_px / dt
-        
-        # Convert to real world units
-        velocity_m_s = velocity_px_sec * meters_per_px
-        velocity_mph = velocity_m_s * 2.23694 # Convert m/s to mph
-        
-        if velocity_mph > max_velocity_mph:
-            max_velocity_mph = velocity_mph
-
-    return round(max_velocity_mph, 1)
-
 # --- ANALYSIS ENGINES ---
 
 def check_guard(lm, k_wrist, s_wrist, shoulders_y):
@@ -127,12 +81,9 @@ def analyze_roundhouse(history, active_leg):
 
     best_frame = history[best_frame_idx]
     lm = best_frame['lms']
-    speed_mph = calculate_mph(history, k_ankle, k_knee, k_hip)
     feedback = []
     scorecard = {"Type": "Roundhouse", "Leg": active_leg, "Errors": []}
     
-    feedback.append(f"Speed: {speed_mph} MPH")
-
     # 1. Guard Check
     shoulders_y = max(lm[LEFT_SHOULDER]['pos'][1], lm[RIGHT_SHOULDER]['pos'][1])
     if not check_guard(lm, k_wrist, s_wrist, shoulders_y):
@@ -189,7 +140,7 @@ def analyze_roundhouse(history, active_leg):
             feedback.append("Knee must lead! (Soccer kick)")
             scorecard["Errors"].append("Bad Trajectory (Soccer Kick)")
 
-    print_scorecard(scorecard, speed_mph)
+    print_scorecard(scorecard)
     return feedback
 
 def analyze_side_kick(history, active_leg):
@@ -197,7 +148,7 @@ def analyze_side_kick(history, active_leg):
         k_hip, k_knee, k_ankle = LEFT_HIP, LEFT_KNEE, LEFT_ANKLE
         k_heel, k_toe = LEFT_HEEL, LEFT_FOOT_INDEX
         s_knee = RIGHT_KNEE
-        s_heel = RIGHT_HEEL # For power line
+        s_heel = RIGHT_HEEL
         k_wrist, s_wrist = LEFT_WRIST, RIGHT_WRIST
         l_shoulder = LEFT_SHOULDER 
     else:
@@ -227,16 +178,8 @@ def analyze_side_kick(history, active_leg):
 
     best_frame = history[best_frame_idx]
     lm = best_frame['lms']
-    speed_mph = calculate_mph(history, k_ankle, k_knee, k_hip)
     feedback = []
     scorecard = {"Type": "Side Kick", "Leg": active_leg, "Errors": []}
-    
-    feedback.append(f"Speed: {speed_mph} MPH")
-
-    # Calculate Leg Length in Pixels for scaling
-    leg_len_px = calculate_distance(lm[k_hip]['pos'], lm[k_knee]['pos']) + \
-                 calculate_distance(lm[k_knee]['pos'], lm[k_ankle]['pos'])
-    if leg_len_px == 0: leg_len_px = 1 # Avoid div by zero
 
     # 1. Guard Check
     shoulders_y = max(lm[LEFT_SHOULDER]['pos'][1], lm[RIGHT_SHOULDER]['pos'][1])
@@ -271,21 +214,7 @@ def analyze_side_kick(history, active_leg):
         feedback.append("Keep Chest Up! (Dropping too low)")
         scorecard["Errors"].append("Torso Dropped Below Hips")
 
-    # 7. Power Line (Advanced) - NORMALIZED FIX
-    # Check alignment of Shoulder, Hip, Heel
-    #power_leak = calculate_point_line_distance(lm[k_hip]['pos'], lm[l_shoulder]['pos'], lm[k_heel]['pos'])
-    
-    # Dynamic Threshold: 10% of user's leg length
-    # This works regardless of how far the user is standing
-    dynamic_threshold = leg_len_px * 0.10
-    
-    #if power_leak > dynamic_threshold: 
-       # feedback.append("Align Joints! (Hip sticking out)")
-        #scorecard["Errors"].append(f"Broken Power Line")
-
-    # 8. Knee Height Maintenance (Advanced)
-    # Compare Knee Y at chamber (start) vs Knee Y at peak
-    # Ideally knee should rise or stay level.
+    # 7. Knee Height Maintenance (Advanced)
     if best_frame_idx > 2:
         chamber_knee_y = history[2]['lms'][k_knee]['pos'][1]
         peak_knee_y = lm[k_knee]['pos'][1]
@@ -293,7 +222,7 @@ def analyze_side_kick(history, active_leg):
             feedback.append("Keep knee up!")
             scorecard["Errors"].append("Knee Dropped During Extension")
 
-    print_scorecard(scorecard, speed_mph)
+    print_scorecard(scorecard)
     return feedback
 
 def analyze_front_snap(history, active_leg):
@@ -328,11 +257,8 @@ def analyze_front_snap(history, active_leg):
     
     best_frame = history[best_frame_idx]
     lm = best_frame['lms']
-    speed_mph = calculate_mph(history, k_ankle, k_knee, k_hip)
     feedback = []
     scorecard = {"Type": "Front Snap", "Leg": active_leg, "Errors": []}
-    
-    feedback.append(f"Speed: {speed_mph} MPH")
 
     # 1. Guard Check
     shoulders_y = max(lm[LEFT_SHOULDER]['pos'][1], lm[RIGHT_SHOULDER]['pos'][1])
@@ -369,13 +295,12 @@ def analyze_front_snap(history, active_leg):
         feedback.append("Tighten your fold! (Heel to butt)")
         scorecard["Errors"].append("Loose Chamber Fold")
 
-    print_scorecard(scorecard, speed_mph)
+    print_scorecard(scorecard)
     return feedback
 
-def print_scorecard(card, speed):
+def print_scorecard(card):
     print("\n" + "="*30)
     print(f"KICK REPORT: {card['Type']} ({card['Leg']})")
-    print(f"SPEED: {speed} MPH")
     print("-" * 30)
     if not card['Errors']:
         print("PERFECT KICK! ✅")
@@ -391,6 +316,9 @@ def main():
     mp_drawing = mp.solutions.drawing_utils
     cap = cv.VideoCapture(0)
     
+    # Force high FPS if supported (Request 60 FPS)
+    cap.set(cv.CAP_PROP_FPS, 60)
+    
     # Configure Window
     window_name = "Kick Fixer Ultimate"
     cv.namedWindow(window_name, cv.WINDOW_NORMAL)
@@ -400,10 +328,16 @@ def main():
     state = "IDLE"
     kick_history = []
     active_leg = None
+    # Initialize with default instructions
     feedback_display = ["Stand in frame", "Press 1: Roundhouse", "Press 2: Side Kick", "Press 3: Front Snap"]
     current_mode = "Roundhouse"
     kick_count = 0
     
+    # Variables for FPS Calculation
+    prev_frame_time = 0
+    new_frame_time = 0
+    frame_counter = 0
+
     # Use higher complexity model for better visibility checks
     with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5, model_complexity=1) as pose:
         while cap.isOpened():
@@ -412,6 +346,16 @@ def main():
 
             h, w, _ = frame.shape
             
+            # --- FPS LOGIC ---
+            new_frame_time = time.time()
+            fps = 1 / (new_frame_time - prev_frame_time) if prev_frame_time > 0 else 0
+            prev_frame_time = new_frame_time
+            
+            # Print FPS to terminal every 10 frames to avoid flooding
+            frame_counter += 1
+            if frame_counter % 10 == 0:
+                print(f"FPS: {int(fps)}")
+
             key = cv.waitKey(1)
             if key == ord('q'): break
             elif key == ord('1'): current_mode = "Roundhouse"
@@ -470,7 +414,8 @@ def main():
                         active_leg = "Left" if left_kicking else "Right"
                         state = "RECORDING"
                         kick_history = []
-                        feedback_display = ["Recording..."] 
+                        # NOTE: We DO NOT clear feedback_display here anymore. 
+                        # This prevents "flashing" and keeps previous results visible.
                         print(f"Started Recording: {active_leg} ({current_mode})")
 
                     # 2. RECORDING
@@ -478,6 +423,7 @@ def main():
                         # Continue if kicking OR if we haven't lost tracking
                         if is_kicking:
                             kick_history.append({'time': time.time(), 'lms': lms})
+                            # Visual indicator for recording (Red Dot)
                             cv.circle(frame, (30, 30), 15, (0, 0, 255), -1) 
                         else:
                             state = "ANALYZING"
@@ -493,8 +439,9 @@ def main():
                             elif current_mode == "Front Snap":
                                 feedback_display = analyze_front_snap(kick_history, active_leg)
                         else:
+                            # Ignored noise. We do NOT reset feedback_display,
+                            # so the user can still read the LAST valid kick.
                             print(f"Ignored noise ({len(kick_history)} frames)")
-                            feedback_display = [f"Mode: {current_mode}"] 
                         
                         state = "IDLE"
                         active_leg = None
